@@ -112,7 +112,48 @@ jobs:
 
       - name: Run Django tests
         run: |
-          python manage.py test --settings=test_settings --verbosity=2
+          python manage.py test --settings=test_settings --verbosity=2 --debug-mode
+
+      - name: Debug failing login test
+        run: |
+          python manage.py shell --settings=test_settings -c "
+          from django.contrib.auth import get_user_model, authenticate
+          from django.test import Client
+          import json
+          
+          User = get_user_model()
+          print('=== Login Debug Test ===')
+          
+          # Create test user
+          user = User.objects.create_user(
+              username='testuser',
+              email='test@example.com', 
+              password='testpass123',
+              is_verified=True
+          )
+          print(f'User created: {user.username}, email: {user.email}')
+          
+          # Test authenticate methods
+          auth_user = authenticate(username='testuser', password='testpass123')
+          print(f'Authenticate with username: {auth_user}')
+          
+          auth_user_email = authenticate(username='test@example.com', password='testpass123')
+          print(f'Authenticate with email: {auth_user_email}')
+          
+          # Test API endpoint
+          client = Client()
+          response = client.post('/api/auth/login/', {
+              'email': 'test@example.com',
+              'password': 'testpass123'
+          }, content_type='application/json')
+          
+          print(f'API response status: {response.status_code}')
+          if response.status_code != 200:
+              print(f'Error response: {response.content.decode()}')
+          
+          user.delete()
+          print('Debug test completed')
+          "
 
       - name: Run specific API tests with coverage
         run: |

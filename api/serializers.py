@@ -93,8 +93,21 @@ class UserLoginSerializer(serializers.Serializer):
         password = attrs.get('password')
 
         if email and password:
-            user = authenticate(request=self.context.get('request'),
-                              username=email, password=password)
+            # First try to find user by email
+            try:
+                from django.contrib.auth import get_user_model
+                User = get_user_model()
+                user_obj = User.objects.get(email=email)
+                
+                # Then authenticate using the username
+                user = authenticate(request=self.context.get('request'),
+                                  username=user_obj.username, password=password)
+            except User.DoesNotExist:
+                user = None
+            except Exception as e:
+                # Log the exception for debugging
+                print(f"Authentication error: {e}")
+                user = None
             
             if not user:
                 raise serializers.ValidationError('Invalid email or password.')
