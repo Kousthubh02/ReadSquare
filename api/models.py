@@ -36,10 +36,10 @@ class CustomUser(AbstractUser):
 
 
 class OTPVerification(models.Model):
-    OTP_TYPES = {
+    OTP_TYPES = [
         ("email_verification", "Email Verification"),
         ("password_reset", "Password Reset"),
-    }
+    ]
 
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, null=True, blank=True)
     email = models.EmailField()
