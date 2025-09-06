@@ -1,150 +1,143 @@
 from django.contrib import admin
-from django.utils.html import format_html
-from .models import Category, Author, Book, Customer, Cart, CartItem, Wishlist, Review, CustomUser, OTPVerification 
+
+from .models import Author, Book, Cart, CartItem, Category, Customer, CustomUser, OTPVerification, Review, Wishlist
+
 
 # Register your models here.
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ['name', 'is_active', 'created_at']
-    list_filter = ['is_active','created_at']
-    search_fields=['name','description']
-    prepopulated_fields={'slug':('name',)}
-    list_editable=['is_active']
-    
-    def book_count(self,obj):
+    list_display = ["name", "is_active", "created_at"]
+    list_filter = ["is_active", "created_at"]
+    search_fields = ["name", "description"]
+    prepopulated_fields = {"slug": ("name",)}
+    list_editable = ["is_active"]
+
+    def book_count(self, obj):
         return obj.books.count()
-    book_count.short_description='Books'
-    
+
+    book_count.short_description = "Books"
+
+
 @admin.register(Author)
 class AuthorAdmin(admin.ModelAdmin):
-    list_display=['name','book_count','created_at']
-    search_fields=['name','bio']
-    prepopulated_fields={'slug':('name',)}
-    
-    def book_count(self,obj):
+    list_display = ["name", "book_count", "created_at"]
+    search_fields = ["name", "bio"]
+    prepopulated_fields = {"slug": ("name",)}
+
+    def book_count(self, obj):
         return obj.books.count()
-    book_count.short_description='Books'
-    
+
+    book_count.short_description = "Books"
+
+
 @admin.register(Book)
 class BookAdmin(admin.ModelAdmin):
-    list_display=['title','author','category','format','price','stock_quantity','is_active','is_featured']
-    list_filter=['is_active','is_featured','format','category','author','created_at']
-    search_fields=['title','isbn','description','author__name']
-    prepopulated_fields={'slug':('title',)}
-    list_editable=['price','stock_quantity','is_active','is_featured']
-    readonly_fields=['created_at','updated_at','average_rating']
-    fieldsets=(
-        ('Basic Information',{
-            'fields':('title','slug','author','category','description')
-        }),
-        ('Publication Details',{
-            'fields':('isbn', 'publication_date','pages','format')
-        }),  
-        ('Pricing & Inventory',{
-            'fields': ('price','original_price','stock_quantity')
-        }),
-        ('Image',{
-            'fields':('cover_image',)
-        }),
-        ('Status',{
-            'fields':('is_active','is_featured')
-        }),
-        ('Info',{
-            'fields':('average_rating','created_at','updated_at'),
-            'classes':('collapse',)
-        }),
-        )
-    
+    list_display = ["title", "author", "category", "format", "price", "stock_quantity", "is_active", "is_featured"]
+    list_filter = ["is_active", "is_featured", "format", "category", "author", "created_at"]
+    search_fields = ["title", "isbn", "description", "author__name"]
+    prepopulated_fields = {"slug": ("title",)}
+    list_editable = ["price", "stock_quantity", "is_active", "is_featured"]
+    readonly_fields = ["created_at", "updated_at", "average_rating"]
+    fieldsets = (
+        ("Basic Information", {"fields": ("title", "slug", "author", "category", "description")}),
+        ("Publication Details", {"fields": ("isbn", "publication_date", "pages", "format")}),
+        ("Pricing & Inventory", {"fields": ("price", "original_price", "stock_quantity")}),
+        ("Image", {"fields": ("cover_image",)}),
+        ("Status", {"fields": ("is_active", "is_featured")}),
+        ("Info", {"fields": ("average_rating", "created_at", "updated_at"), "classes": ("collapse",)}),
+    )
+
+
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
-    list_display=['full_name','user_email','phone','city','created_at']
-    search_fields=['user_username','user_email','user_first_name','user_last_name','phone']
-    readonly_fields=['created_at']
-    
-    def user_email(self,obj):
+    list_display = ["full_name", "user_email", "phone", "city", "created_at"]
+    search_fields = ["user_username", "user_email", "user_first_name", "user_last_name", "phone"]
+    readonly_fields = ["created_at"]
+
+    def user_email(self, obj):
         return obj.user.email
-    user_email.short_description='Email'
-    
+
+    user_email.short_description = "Email"
+
+
 class CartItemInLine(admin.TabularInline):
-    model=CartItem
-    extra=0
-    readonly_fields=['total_price']
-    
+    model = CartItem
+    extra = 0
+    readonly_fields = ["total_price"]
+
+
 @admin.register(Cart)
 class CartAdmin(admin.ModelAdmin):
-    list_display=['customer_name','total_items','total_price','created_at']
-    list_filter=['created_at']
-    search_fields=['customer__user__username','session_key']
+    list_display = ["customer_name", "total_items", "total_price", "created_at"]
+    list_filter = ["created_at"]
+    search_fields = ["customer__user__username", "session_key"]
     inlines = [CartItemInLine]
-    readonly_fields=['total_items','total_price',]
-    
-    def customer_name(self,obj):
+    readonly_fields = [
+        "total_items",
+        "total_price",
+    ]
+
+    def customer_name(self, obj):
         if obj.customer:
             return obj.customer.user.username
         return f"Anonymous ({obj.session_key})"
-    customer_name.short_description='Customer'
-    
+
+    customer_name.short_description = "Customer"
+
+
 @admin.register(CartItem)
 class CartItemAdmin(admin.ModelAdmin):
-    list_display=['cart_customer','book','quantity','total_price','created_at']
-    list_filter=['created_at']
-    search_fields=['cart__customer__user__username','book__title']
-    readonly_fields=['total_price']
-    
-    def cart_customer(self,obj):
+    list_display = ["cart_customer", "book", "quantity", "total_price", "created_at"]
+    list_filter = ["created_at"]
+    search_fields = ["cart__customer__user__username", "book__title"]
+    readonly_fields = ["total_price"]
+
+    def cart_customer(self, obj):
         if obj.cart.customer:
             return obj.cart.customer.user.username
-        return f"Anonymous"
-    cart_customer.short_description='Customer'
-    
+        return "Anonymous"
+
+    cart_customer.short_description = "Customer"
+
+
 @admin.register(Wishlist)
 class WishlistAdmin(admin.ModelAdmin):
-    list_display=['customer','book','created_at']
-    list_filter=['created_at']
-    search_fields=['customer__user__username','book__title']
+    list_display = ["customer", "book", "created_at"]
+    list_filter = ["created_at"]
+    search_fields = ["customer__user__username", "book__title"]
+
 
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
-    list_display=['book','customer','rating','is_approved','created_at']
-    list_filter=['rating','is_approved','created_at']
-    search_fields=['book__title','customer__user__username','comment']
-    list_editable=['is_approved']
-    readonly_fields=['created_at']
+    list_display = ["book", "customer", "rating", "is_approved", "created_at"]
+    list_filter = ["rating", "is_approved", "created_at"]
+    search_fields = ["book__title", "customer__user__username", "comment"]
+    list_editable = ["is_approved"]
+    readonly_fields = ["created_at"]
 
 
 @admin.register(CustomUser)
 class CustomUserAdmin(admin.ModelAdmin):
-    list_display = ['username', 'email', 'first_name', 'last_name', 'is_verified', 'is_active', 'date_joined']
-    list_filter = ['is_verified', 'is_active', 'is_staff', 'date_joined']
-    search_fields = ['username', 'email', 'first_name', 'last_name']
-    readonly_fields = ['date_joined', 'last_login', 'created_at', 'updated_at']
-    list_editable = ['is_verified', 'is_active']
-    
+    list_display = ["username", "email", "first_name", "last_name", "is_verified", "is_active", "date_joined"]
+    list_filter = ["is_verified", "is_active", "is_staff", "date_joined"]
+    search_fields = ["username", "email", "first_name", "last_name"]
+    readonly_fields = ["date_joined", "last_login", "created_at", "updated_at"]
+    list_editable = ["is_verified", "is_active"]
+
     fieldsets = (
-        ('Personal Info', {
-            'fields': ('username', 'email', 'first_name', 'last_name', 'phone_number', 'date_of_birth')
-        }),
-        ('Permissions', {
-            'fields': ('is_verified', 'is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')
-        }),
-        ('Important dates', {
-            'fields': ('last_login', 'date_joined', 'created_at', 'updated_at'),
-            'classes': ('collapse',)
-        }),
+        ("Personal Info", {"fields": ("username", "email", "first_name", "last_name", "phone_number", "date_of_birth")}),
+        ("Permissions", {"fields": ("is_verified", "is_active", "is_staff", "is_superuser", "groups", "user_permissions")}),
+        ("Important dates", {"fields": ("last_login", "date_joined", "created_at", "updated_at"), "classes": ("collapse",)}),
     )
 
 
 @admin.register(OTPVerification)
 class OTPVerificationAdmin(admin.ModelAdmin):
-    list_display = ['email', 'otp_type', 'otp', 'is_used', 'is_expired', 'created_at', 'expires_at']
-    list_filter = ['otp_type', 'is_used', 'is_expired', 'created_at']
-    search_fields = ['email', 'user__username', 'user__email']
-    readonly_fields = ['otp', 'created_at', 'expires_at']
-    list_editable = ['is_used', 'is_expired']
-    
+    list_display = ["email", "otp_type", "otp", "is_used", "is_expired", "created_at", "expires_at"]
+    list_filter = ["otp_type", "is_used", "is_expired", "created_at"]
+    search_fields = ["email", "user__username", "user__email"]
+    readonly_fields = ["otp", "created_at", "expires_at"]
+    list_editable = ["is_used", "is_expired"]
+
     def has_add_permission(self, request):
         return False  # Prevent manual creation of OTPs
-    
-    
-    
-    

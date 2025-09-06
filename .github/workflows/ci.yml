@@ -84,9 +84,17 @@ jobs:
           STATICFILES_DIRS = []
           STATIC_ROOT = '/tmp/static/'
           
-          # Debug settings
+          # Debug settings for development CI
           DEBUG = True
           ALLOWED_HOSTS = ['*']
+          
+          # Suppress security warnings for development CI (only the ones we can't fix in dev)
+          SILENCED_SYSTEM_CHECKS = [
+              'security.W004',  # SECURE_HSTS_SECONDS (HTTPS only)
+              'security.W008',  # SECURE_SSL_REDIRECT (HTTPS only)
+              'security.W009',  # SECRET_KEY (development key)
+              'security.W018',  # DEBUG=True (development mode)
+          ]
           
           # Suppress warnings for CI
           import warnings
@@ -190,8 +198,8 @@ jobs:
 
       - name: Security and code quality checks
         run: |
-          # Check for potential security issues
-          python manage.py check --deploy --settings=test_settings || true
+          # Check for potential security issues (excluding deployment checks for development)
+          python manage.py check --settings=test_settings || true
           
           # Check for missing migrations
           python manage.py makemigrations --check --dry-run --settings=test_settings
