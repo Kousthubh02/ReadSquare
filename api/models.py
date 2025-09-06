@@ -1,9 +1,92 @@
 from wsgiref.validate import validator
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import AbstractUser
+from django.conf import settings
 from django.core.validators import MinValueValidator,MaxValueValidator
 from django.urls import reverse
 from decimal import Decimal 
+from django.contrib.auth.validators import UnicodeUsernameValidator
+from django.utils import timezone 
+from datetime import timedelta 
+import random
+import string
+
+
+class CustomUser(AbstractUser):
+    email=models.EmailField(unique=True)
+    first_name=models.CharField(max_length=30)
+    last_name=models.CharField(max_length=30)
+    phone_number=models.CharField(max_length=15,blank=True,null=True)
+    date_of_birth=models.DateField(null=True,blank=True)
+    is_verified=models.BooleanField(default=False)
+    created_at=models.DateTimeField(auto_now_add=True)
+    updated_at=models.DateTimeField(auto_now=True)
+    
+    USERNAME_FIELD='username'
+    REQUIRED_FIELDS=['email','first_name','last_name']
+    
+    class Meta:
+        db_table='custom_user'
+        verbose_name='User'
+        verbose_name_plural='Users'
+        
+    def __str__(self):
+        return self.email
+    
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}".strip()
+
+
+class OTPVerification(models.Model):
+    OTP_TYPES={
+        ('email_verification','Email Verification'),
+        ('password_reset','Password Reset'),
+    }
+    
+    user=models.ForeignKey(CustomUser,on_delete=models.CASCADE,null=True,blank=True)
+    email=models.EmailField()
+    otp=models.CharField(max_length=6)
+    otp_type=models.CharField(max_length=20,choices=OTP_TYPES)
+    is_used=models.BooleanField(default=False)
+    is_expired=models.BooleanField(default=False)
+    created_at=models.DateTimeField(auto_now_add=True)
+    expires_at=models.DateTimeField()
+    
+    temp_data=models.JSONField(blank=True,null=True)
+    
+    class Meta:
+        db_table='otp_verification'
+        verbose_name='OTP Verification'
+        verbose_name_plural='OTP Verifications'
+        
+    def __str__(self):
+        return f"{self.email}-{self.otp_type}-{self.otp}"
+    
+    @classmethod
+    def generate_otp(cls):
+        return ''.join(random.choices(string.digits,k=6))
+    
+    def save(self,*args,**kwargs):
+        if not self.otp:
+            self.otp=self.generate_otp()
+        if not self.expires_at:
+            self.expires_at=timezone.now()+timedelta(minutes=10)
+        super().save(*args,**kwargs)
+        
+    def is_valid(self):
+        if self.is_used or self.is_expired:
+            return False
+        if timezone.now()>self.expires_at:
+            self.is_expired=True
+            self.save()
+            return False
+        return True
+    
+    def mark_as_used(self):
+        self.is_used=True
+        self.save()
+
 
 class Category(models.Model):
     name=models.CharField(max_length=100, unique=True)
@@ -91,7 +174,7 @@ class Book(models.Model):
         return None
     
 class Customer(models.Model):
-    user=models.OneToOneField(User,on_delete=models.CASCADE)
+    user=models.OneToOneField(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
     phone=models.CharField(max_length=15,blank=True,null=True)
     address=models.TextField(blank=True,null=True)
     city=models.CharField(max_length=100,blank=True)
@@ -167,3 +250,4 @@ class Review(models.Model):
         
     def __str__(self):
         return f"Review of {self.book.title} by {self.customer.user.get_full_name()}"
+

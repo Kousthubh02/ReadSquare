@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Category , Author , Book , Customer,Cart,CartItem,Wishlist,Review 
+from .models import Category, Author, Book, Customer, Cart, CartItem, Wishlist, Review, CustomUser, OTPVerification 
 
 # Register your models here.
 @admin.register(Category)
@@ -38,7 +38,7 @@ class BookAdmin(admin.ModelAdmin):
             'fields':('title','slug','author','category','description')
         }),
         ('Publication Details',{
-            'fields':('isbn''publication_date','pages','format')
+            'fields':('isbn', 'publication_date','pages','format')
         }),  
         ('Pricing & Inventory',{
             'fields': ('price','original_price','stock_quantity')
@@ -75,7 +75,7 @@ class CartAdmin(admin.ModelAdmin):
     list_display=['customer_name','total_items','total_price','created_at']
     list_filter=['created_at']
     search_fields=['customer__user__username','session_key']
-    inLines=[CartItemInLine]
+    inlines = [CartItemInLine]
     readonly_fields=['total_items','total_price',]
     
     def customer_name(self,obj):
@@ -110,6 +110,40 @@ class ReviewAdmin(admin.ModelAdmin):
     search_fields=['book__title','customer__user__username','comment']
     list_editable=['is_approved']
     readonly_fields=['created_at']
+
+
+@admin.register(CustomUser)
+class CustomUserAdmin(admin.ModelAdmin):
+    list_display = ['username', 'email', 'first_name', 'last_name', 'is_verified', 'is_active', 'date_joined']
+    list_filter = ['is_verified', 'is_active', 'is_staff', 'date_joined']
+    search_fields = ['username', 'email', 'first_name', 'last_name']
+    readonly_fields = ['date_joined', 'last_login', 'created_at', 'updated_at']
+    list_editable = ['is_verified', 'is_active']
+    
+    fieldsets = (
+        ('Personal Info', {
+            'fields': ('username', 'email', 'first_name', 'last_name', 'phone_number', 'date_of_birth')
+        }),
+        ('Permissions', {
+            'fields': ('is_verified', 'is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')
+        }),
+        ('Important dates', {
+            'fields': ('last_login', 'date_joined', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+
+@admin.register(OTPVerification)
+class OTPVerificationAdmin(admin.ModelAdmin):
+    list_display = ['email', 'otp_type', 'otp', 'is_used', 'is_expired', 'created_at', 'expires_at']
+    list_filter = ['otp_type', 'is_used', 'is_expired', 'created_at']
+    search_fields = ['email', 'user__username', 'user__email']
+    readonly_fields = ['otp', 'created_at', 'expires_at']
+    list_editable = ['is_used', 'is_expired']
+    
+    def has_add_permission(self, request):
+        return False  # Prevent manual creation of OTPs
     
     
     
