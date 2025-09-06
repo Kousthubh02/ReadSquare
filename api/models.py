@@ -26,7 +26,6 @@ class CustomUser(AbstractUser):
     REQUIRED_FIELDS=['email','first_name','last_name']
     
     class Meta:
-        db_table='custom_user'
         verbose_name='User'
         verbose_name_plural='Users'
         
@@ -56,7 +55,6 @@ class OTPVerification(models.Model):
     temp_data=models.JSONField(blank=True,null=True)
     
     class Meta:
-        db_table='otp_verification'
         verbose_name='OTP Verification'
         verbose_name_plural='OTP Verifications'
         
